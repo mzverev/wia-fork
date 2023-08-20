@@ -1,7 +1,7 @@
 <template>
   <div :class="['search-container', 'p-5', {'fixed': imagesNotEmpty}]">
     <div v-if="!imagesNotEmpty" class="pb-6" style="color:var(--gray-700)">
-      <div class="text-5xlp pb-2">Web Assistant for Impaired People</div>
+      <div class="text-5xl pb-2">Web Assistant for Impaired People</div>
       <div class="text-1xl">from any public website</div>
     </div>
     <SearchBlock ref="childComponent" @search="fetchImages" :search-in-progress="searchInProgress"
