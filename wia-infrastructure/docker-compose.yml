@@ -1,0 +1,127 @@
+version: '3.1'
+services:
+
+  apache2:
+    restart: always
+    container_name: wia_apache2
+    build:
+      context: ./apache2
+      args:
+        - PHP_UPSTREAM_PORT=${APACHE_PHP_UPSTREAM_PORT}
+        - PHP_UPSTREAM_TIMEOUT=${APACHE_PHP_UPSTREAM_TIMEOUT}
+        - DOCUMENT_ROOT=${APACHE_DOCUMENT_ROOT}
+    volumes:
+      - ${SOURCE_CODE_PATH}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ${APACHE_HOST_LOG_PATH}:/var/log/apache2
+      - ./apache2/sites:/etc/apache2/sites-available
+      - ./apache2/ssl/caRoot:/caRoot/
+    ports:
+      - "${APACHE_HOST_HTTP_PORT}:80"
+      - "${APACHE_HOST_HTTPS_PORT}:443"
+    depends_on:
+      - php-fpm
+    networks:
+      wia_dev:
+        ipv4_address: ${APACHE_IP}
+
+  php-fpm:
+    container_name: wia_php-fpm
+    restart: always
+    build:
+      context: php-fpm
+      args:
+        - PHP_FPM_VERSION=${PHP_FPM_VERSION}
+        - ADDITIONAL_LOCALES=${PHP_FPM_ADDITIONAL_LOCALES}
+        - PUID=${PHP_FPM_PUID}
+        - PGID=${PHP_FPM_PGID}
+        - INSTALL_XDEBUG=${INSTALL_XDEBUG}
+    volumes:
+      - ${SOURCE_CODE_PATH}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - /var/tmp:/var/tmp
+    extra_hosts:
+      - "dockerhost:${DOCKER_HOST_IP}"
+    expose:
+      - "9000"
+      - "9003"
+    environment:
+      - PHP_IDE_CONFIG=${PHP_IDE_CONFIG}
+      - DOCKER_HOST=tcp://docker-in-docker:2376
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_TLS_CERTDIR=/certs
+      - DOCKER_CERT_PATH=/certs/client
+      - FAKETIME=${PHP_FPM_FAKETIME}
+    depends_on:
+      - workspace
+    networks:
+      - wia_dev
+
+  mysql8:
+    restart: always
+    image: mysql:8
+    container_name: wia_mysql8
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+    volumes:
+      - ${VOLUME_DATA_ROOT_PATH}/mysql8:/var/lib/mysql
+    networks:
+      wia_dev:
+        ipv4_address: ${MYSQL8_IP}
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.2.0
+    restart: always
+    environment:
+      PMA_HOSTS: mysql8
+    container_name: wia_phpmyadmin
+    networks:
+      wia_dev:
+        ipv4_address: ${PHPMYADMIN_IP}
+
+#  redis:
+#    restart: always
+#    image: redis
+#    container_name: wia_redis
+#    networks:
+#      - wia_dev
+#
+#  redis-admin:
+#    image: faktiva/php-redis-admin
+#    restart: always
+#    container_name: wia_redisadmin
+#    environment:
+#      - PHPREDMIN_DATABASE_REDIS_0_HOST=redis
+#    links:
+#      - redis
+#    ports:
+#      - 8091:80
+#    networks:
+#      wia_dev:
+#        ipv4_address: ${REDIS_ADMIN_IP}
+
+  workspace:
+    restart: always
+    build:
+      context: './workspace'
+      args:
+        - PUID=${HOST_PUID}
+        - PGID=${HOST_PGID}
+        - WORKSPACE_PHP_VERSION=${WORKSPACE_PHP_VERSION}
+        - TZ=${WORKSPACE_TIMEZONE}
+        - NODE_VERSION=${WORKSPACE_NODE_VERSION}
+    container_name: wia_workspace
+    volumes:
+      - ${SOURCE_CODE_PATH}:${APP_CODE_PATH_CONTAINER}${APP_CODE_CONTAINER_FLAG}
+      - ~/.ssh:/root/.ssh
+      - ~/.ssh:/home/wia/.ssh
+    ports:
+      - 8002:8002
+    networks:
+      - wia_dev
+
+networks:
+  wia_dev:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${NETWORK_SUBNET}

@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+export HOST_PUID=$(id -u)
+export HOST_PGID=$(id -g)
+
+DOCKER_COMPOSE_CMD="docker-compose"
+if ! command -v $DOCKER_COMPOSE_CMD &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+fi
+
+$DOCKER_COMPOSE_CMD up --build -d --remove-orphans
