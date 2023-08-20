@@ -5,6 +5,7 @@ cd wia-infrastructure
 cd ..
 
 docker exec -it wia_mysql8 mysql -u root -p'12345' -e "CREATE DATABASE IF NOT EXISTS wia CHARACTER SET utf8 COLLATE utf8_general_ci;"
-docker exec wia_workspace sh -c "cd /var/www/html/wia/wia-api && composer install"
-docker exec wia_workspace sh -c "cd /var/www/html/wia/wia-spa && npm i"
+docker exec -it wia_mysql8 mysql -u root -p'12345' -e "CREATE DATABASE IF NOT EXISTS wia-testing CHARACTER SET utf8 COLLATE utf8_general_ci;"
+docker exec wia_workspace sh -c "cd /var/www/html/wia/wia-api && composer install && php artisan migrate && php artisan migrate --env=testing"
+docker exec wia_workspace sh -c "cd /var/www/html/wia/wia-spa && npm i && npm run build"
 docker exec wia_workspace sh -c "/usr/bin/supervisord"
