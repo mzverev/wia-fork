@@ -1,7 +1,7 @@
 <template>
   <div>
     <span class="p-inputgroup search-block">
-      <InputText :class="['border-round-left-3xl', {'p-invalid': errorMessage}]" v-model="searchTerm" placeholder="Search" size="large" @keyup.enter="search"/>
+      <InputText :class="['border-round-left-3xl', {'p-invalid': errorMessage}]" v-model="searchTerm" placeholder="Type a URL" size="large" @keyup.enter="search"/>
       <Button class="border-round-right-3xl" :icon="['pi', searchInProgress ?  'pi-spin pi-spinner' : 'pi-search']"
               size="large" severity="primary" :disabled="searchInProgress" @click="search" />
     </span>
